@@ -1,73 +1,49 @@
-import express from 'express'
-import conexao from '../infra/conexao.js'
-const app = express()
+import express from 'express';
+import conexao from '../infra/conexao.js';
 
-// indicar para o express ler o body como json
+const app = express();
+app.use(express.json());
 
-app.use(express.json())
-
-// const cursos = [
-//     {id: 1, disciplina: 'ADS'},
-//     {id: 2, disciplina: 'ADS'},
-//     {id: 3, disciplina: 'ADS'},
-//     {id: 4, disciplina: 'ADS'}
-// ]
-
-//Criando uma função de buscar por Id
-function buscarCursosPorId(id) {
-    return cursos.filter(curso => curso.id == id)
-}
-
-//Criando uma função de buscar por Id
-function buscarIndexCurso(id) {
-    return cursos.findIndex(curso => curso.id == id)
-}
-
-// Criando uma rota default (endpoint)
-// app.get('/', (req, res) => {
-//     res.send('Hello World')
-// })
-
-// ROTAS 
-// Criando uma nova rota com GET
+// Listar todos os cursos
 app.get('/cursos', (req, res) => {
-    // res.status(200).send(cursos)
-    const sql = "SELECT * FROM curso;"
-    conexao.query(sql, (error, result) => {
-        if (error) {
-            console.log(error)
-        }
-        else {
-            res.status(200).json(result)
-        }
-    })
-})
-// Criando uma nova rota com POST
-app.post('/cursos', (req, res) => {
-    cursos.push(req.body)
-    res.status(200).send('Seleção cadastrada com sucesso!')
-})
-// Criando uma variavél que busca uma informação no console
+  conexao.query("SELECT * FROM curso", (err, result) => {
+    if (err) return res.status(500).send(err);
+    res.json(result);
+  });
+});
+
+// Buscar cursos por id
 app.get('/cursos/:id', (req, res) => {
-    // let index = req.params.id
-    // console.log(index)
-    res.json(buscarCursosPorId(req.params.id))
-})
+  conexao.query("SELECT * FROM curso WHERE id = ?", [req.params.id], (err, result) => {
+    if (err) return res.status(500).send(err);
+    res.json(result[0]);
+  });
+});
 
-// Criando um edpoind que deleta por id
-app.delete('/cursos/:id', (req, res) => {
-    let index = buscarIndexCurso(req.params.id)
-    cursos.splice(index, 1)
-    console.log(index)
-    res.send(`O curso com o id ${req.params.id} excluido com sucesso`)
-})
+// Criar novo curso    
+app.post('/cursos', (req, res) => {
+  const { disciplina } = req.body;
+  conexao.query("INSERT INTO curso (disciplina) VALUES (?)", [disciplina], (err, result) => {
+    if (err) return res.status(500).send(err);
+    res.json({ id: result.insertId, disciplina });
+  });
+});
 
-// Atualizando o Index
+// Atualizar um curso já exitente
 app.put('/cursos/:id', (req, res) => {
-    let index = buscarIndexCurso(req.params.id)
-    cursos[index].disciplina = req.body.disciplina
-    res.json(cursos)
-})
+  const { disciplina } = req.body;
+  conexao.query("UPDATE curso SET disciplina = ? WHERE id = ?", [disciplina, req.params.id], (err) => {
+    if (err) return res.status(500).send(err);
+    res.json({ id: req.params.id, disciplina });
+  });
+});
 
-export default app
+// Deletar curso
+app.delete('/cursos/:id', (req, res) => {
+  conexao.query("DELETE FROM curso WHERE id = ?", [req.params.id], (err) => {
+    if (err) return res.status(500).send(err);
+    res.json({ message: `Curso ${req.params.id} deletado` });
+  });
+});
 
+export default app;
