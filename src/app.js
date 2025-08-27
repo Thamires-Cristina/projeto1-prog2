@@ -1,16 +1,16 @@
 import express from 'express';
-import conexao from '../infra/conexao.js';
+import conexao from "../database/conexao.js";
+import CursoController from './app/controllers/cursoController.js';
 
 const app = express();
 app.use(express.json());
 
+
+////////  Rotas ////////////
+
 // Listar todos os cursos
-app.get('/cursos', (req, res) => {
-  conexao.query("SELECT * FROM curso", (err, result) => {
-    if (err) return res.status(500).send(err);
-    res.json(result);
-  });
-});
+app.get('/cursos', CursoController.index);
+
 
 // Buscar cursos por id
 app.get('/cursos/:id', (req, res) => {
@@ -38,7 +38,7 @@ app.put('/cursos/:id', (req, res) => {
   });
 });
 
-// Deletar curso
+// Deletar curso utilizando o id como paramentro de busca
 app.delete('/cursos/:id', (req, res) => {
   conexao.query("DELETE FROM curso WHERE id = ?", [req.params.id], (err) => {
     if (err) return res.status(500).send(err);
