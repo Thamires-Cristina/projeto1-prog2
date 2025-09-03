@@ -1,49 +1,21 @@
 import express from 'express';
-import conexao from '../infra/conexao.js';
+import cursoRoutes from './app/routes/CursosRoutes.js';
 
 const app = express();
+
+// Middlewares
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Listar todos os cursos
-app.get('/cursos', (req, res) => {
-  conexao.query("SELECT * FROM curso", (err, result) => {
-    if (err) return res.status(500).send(err);
-    res.json(result);
-  });
-});
+// Healthcheck
+app.get('/health', (_req, res) => res.status(200).json({ status: 'ok' }));
 
-// Buscar cursos por id
-app.get('/cursos/:id', (req, res) => {
-  conexao.query("SELECT * FROM curso WHERE id = ?", [req.params.id], (err, result) => {
-    if (err) return res.status(500).send(err);
-    res.json(result[0]);
-  });
-});
+// Rotas
+app.use(cursoRoutes);
 
-// Criar novo curso    
-app.post('/cursos', (req, res) => {
-  const { disciplina } = req.body;
-  conexao.query("INSERT INTO curso (disciplina) VALUES (?)", [disciplina], (err, result) => {
-    if (err) return res.status(500).send(err);
-    res.json({ id: result.insertId, disciplina });
-  });
-});
-
-// Atualizar um curso já exitente
-app.put('/cursos/:id', (req, res) => {
-  const { disciplina } = req.body;
-  conexao.query("UPDATE curso SET disciplina = ? WHERE id = ?", [disciplina, req.params.id], (err) => {
-    if (err) return res.status(500).send(err);
-    res.json({ id: req.params.id, disciplina });
-  });
-});
-
-// Deletar curso
-app.delete('/cursos/:id', (req, res) => {
-  conexao.query("DELETE FROM curso WHERE id = ?", [req.params.id], (err) => {
-    if (err) return res.status(500).send(err);
-    res.json({ message: `Curso ${req.params.id} deletado` });
-  });
+// Middleware 404
+app.use((req, res) => {
+  res.status(404).json({ error: 'Rota não encontrada' });
 });
 
 export default app;
